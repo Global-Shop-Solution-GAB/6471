@@ -1,0 +1,72 @@
+﻿Program.Sub.Preflight.Start
+V.Global.bConOpen.Declare(Boolean, False)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Function.Intrinsic.UI.UsePixels ' Allows you to use Pixels instead of Twips throughout
+'Project: 6471 Automate Order Line User Field Population 
+'Author: Brandon Medina 
+'Quote: 13072-0
+F.Intrinsic.Control.Try
+
+	F.Intrinsic.Control.SelectCase(V.Caller.Hook)
+		F.Intrinsic.Control.Case(12201)
+			F.Intrinsic.Control.CallSub(FillUserFields)
+	F.Intrinsic.Control.EndSelect
+	
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+F.Intrinsic.Control.EndTry
+
+Program.Sub.Main.End
+
+Program.Sub.ErrorMsg.Start
+V.Local.sError.Declare
+
+F.Intrinsic.Control.If(V.Global.bConOpen)
+	F.ODBC.Connection!con.Close
+F.Intrinsic.Control.EndIf	
+
+'Generic Error message.
+f.Intrinsic.String.Build("Project GCG_6471_OLUserFieldPop.g2u {0}{0}Subroutine: {1}{0}Error: {2} with Description: {3}", v.Ambient.NewLine, v.Args.CurrentSub, v.Ambient.ErrorNumber, v.Ambient.ErrorDescription, v.Local.sError)
+f.Intrinsic.UI.Msgbox(v.Local.sError)
+Program.Sub.ErrorMsg.End
+
+Program.Sub.FillUserFields.Start
+F.Intrinsic.Control.Try
+	V.Local.sSQL.Declare
+	V.Local.sPartRev.Declare
+	V.Local.sLoc.Declare
+	V.Local.sUserInfo.Declare
+	
+	'Passed Variables 
+	'000052: Part
+	'000054: Loc
+	'000053: Rev 
+	'000077: User 1
+	'000082: User 3
+	
+	'Grab Screen Part info, send to array
+	F.Intrinsic.String.GSSPartString(V.Passed.000052, V.Passed.000053, V.Local.sPartRev)
+
+	F.ODBC.Connection!con.OpenCompanyConnection
+	V.Global.bConOpen.Set(True)
+	F.Intrinsic.String.Build("select TEXT_INFO1, DESCRIPTION_3 from INVENTORY_MST2 where PART = '{0}' and LOCATION = '{1}'", V.Local.sPartRev, V.Local.sLoc, V.Local.sSQL)
+	F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL, V.Local.sUserInfo)
+	F.Intrinsic.String.Split(V.Local.sUserInfo, "*!*", V.Local.sUserInfo)
+	F.ODBC.Connection!con.Close
+	V.Global.bConOpen.Set(False)
+	
+	'Set Screen Elements
+	V.Passed.000077.Set(V.Local.sUserInfo(1))
+	V.Passed.000082.Set(V.Local.sUserInfo(0))
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+F.Intrinsic.Control.EndTry
+Program.Sub.FillUserFields.End
+
+Program.Sub.Comments.Start
+${$5$}$3.0.0.0$}$1
+${$6$}$bmedina$}$20210825112409405$}$kOipCrsyLBVj2KoSwkcdK23ChxGVcBlEarwrywx22hG34GCx3umTBGTwH2W9yMWtK0tmszzufNE=
+Program.Sub.Comments.End
